@@ -1,0 +1,42 @@
+---
+name: Run integration tests for the raphaeldegail.hcp_terraform collection
+on:
+  pull_request: {}
+  push:
+    branches: main
+env:
+  PYTHON_VERSION: '3.11'
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    # Environment where integration variables are stored
+    environment: develop
+    defaults:
+      run:
+        working-directory: ansible_collections/raphaeldegail/hcp_terraform
+    steps:
+      - name: check out code
+        uses: actions/checkout@v4
+        with:
+          path: ansible_collections/raphaeldegail/hcp_terraform
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Install ansible and tests
+        run: pip install -r requirements-test.txt
+      - name: Write integration-test configuration files
+        env:
+          CI_HCP_TERRAFORM_TOKEN: ${{ secrets.CI_HCP_TERRAFORM_TOKEN }}
+          CI_HCP_TERRAFORM_ORG: ${{ vars.CI_HCP_TERRAFORM_ORG }}
+        run: |
+          echo "---
+          organization_name: $CI_HCP_TERRAFORM_ORG
+          bearer_token: $CI_HCP_TERRAFORM_TOKEN
+          " > tests/integration/integration_config.yml
+      # run tests
+      - name: Run integration tests
+        # Add the -vvv flag to print out more output
+        run: ansible-test integration -v --color --python ${{ env.PYTHON_VERSION }}

@@ -1,0 +1,2 @@
+pytest-xdist==3.6.1
+ansible-core==2.16.0
