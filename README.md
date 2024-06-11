@@ -13,3 +13,4 @@ ansible-galaxy collection install raphaeldegail.hcp_terraform
 ## Resources Supported
 
 * Terraform project (hcp_terraform_project, hcp_terraform_project_info)
+* Terraform variable set (hcp_terraform_varset, hcp_terraform_varset_info)
