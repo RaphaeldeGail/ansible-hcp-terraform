@@ -124,6 +124,24 @@ class HcpSession(object):
         except getattr(requests.exceptions, 'RequestException') as inst:
             self.module.fail_json(msg=inst.message)
 
+    def put(self, url, body=None, **kwargs):
+        """Implement the PUT method for the sessions request.
+
+        Args:
+            url: str, the URL to call for the request.
+            body: dict, the body for the request.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            requests.Response, the response from the request.
+        """
+        kwargs.update({'json': body})
+
+        try:
+            return self.session().put(url, **kwargs)
+        except getattr(requests.exceptions, 'RequestException') as inst:
+            self.module.fail_json(msg=inst.message)
+
     def list(self, url, callback, params=None, array_name='data',
              pageToken='next-page', **kwargs):
         """Calls for an API with a LIST format.
@@ -276,7 +294,11 @@ class HcpRequest(object):
         Returns:
             bool, True if self and other are equal.
         """
-        return not self.difference(other)
+        # In order to compare empty lists or dictionaries to non empty ones
+        # one must put the non empty resource on the left side
+        # so the comparison resort to testing with objetcs being put on either
+        # side.
+        return not self.difference(other) and not other.difference(self)
 
     def __ne__(self, other):
         """Defines the non-equality relationship.

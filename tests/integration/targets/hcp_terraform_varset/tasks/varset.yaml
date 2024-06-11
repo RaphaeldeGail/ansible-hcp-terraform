@@ -1,0 +1,139 @@
+---
+# Pre-test setup
+- name: Delete the test varset if it exists
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+# ------------------------------------------------------------------------------
+- name: Create a varset
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Query the varset
+  raphaeldegail.hcp_terraform.hcp_terraform_varset_info:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify the result contains an ID and a name
+  ansible.builtin.assert:
+    that:
+      - "'id' in result"
+      - result.get('attributes', {}).get('name') == name
+# ------------------------------------------------------------------------------
+- name: Create a varset that already exists
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.attributes.name == name
+# ------------------------------------------------------------------------------
+- name: Update a varset that already exists with a description and project binding
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: "{{ name }}"
+    description: "{{ description }}"
+    projects:
+    - "{{ default_project }}"
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.attributes.name == name
+      - result.attributes.description == description
+      - result.get('relationships', {}).get('projects', {}).get('data', []) != []
+- name: Query the varset
+  raphaeldegail.hcp_terraform.hcp_terraform_varset_info:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify that the result contains an ID, a name, a description and a project binding
+  ansible.builtin.assert:
+    that:
+      - "'id' in result"
+      - result.get('attributes', {}).get('name') == name
+      - result.get('attributes', {}).get('description') == description
+      - result.get('relationships', {}).get('projects', {}).get('data', {})[0].get('id', '') == "{{ default_project }}"
+# ------------------------------------------------------------------------------
+- name: Update a varset that already exists to remove any project binding
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: "{{ name }}"
+    description: "{{ description }}"
+    projects: []
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.attributes.name == name
+      - result.attributes.description == description
+      - result.get('relationships', {}).get('projects', {}).get('data', []) == []
+- name: Query the varset
+  raphaeldegail.hcp_terraform.hcp_terraform_varset_info:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify that the result contains an ID, a name, a description and no project binding
+  ansible.builtin.assert:
+    that:
+      - "'id' in result"
+      - result.get('attributes', {}).get('name') == name
+      - result.get('attributes', {}).get('description') == description
+      - result.get('relationships', {}).get('projects', {}).get('data', {}) == []
+#----------------------------------------------------------
+- name: Delete a varset
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Query the varset
+  raphaeldegail.hcp_terraform.hcp_terraform_varset_info:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify that no varset ID was found
+  ansible.builtin.assert:
+    that:
+      - "'id' not in result"
+# ------------------------------------------------------------------------------
+- name: Delete a varset that does not exist
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false

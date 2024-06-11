@@ -31,10 +31,12 @@ jobs:
         env:
           CI_HCP_TERRAFORM_TOKEN: ${{ secrets.CI_HCP_TERRAFORM_TOKEN }}
           CI_HCP_TERRAFORM_ORG: ${{ vars.CI_HCP_TERRAFORM_ORG }}
+          CI_HCP_TERRAFORM_PROJECT:  ${{ secrets.CI_HCP_TERRAFORM_PROJECT }}
         run: |
           echo "---
           organization_name: $CI_HCP_TERRAFORM_ORG
           bearer_token: $CI_HCP_TERRAFORM_TOKEN
+          default_project: $CI_HCP_TERRAFORM_PROJECT
           " > tests/integration/integration_config.yml
       # run tests
       - name: Run integration tests

@@ -99,6 +99,23 @@ class HCPRequestDifferenceTestCase(unittest.TestCase):
         self.assertNotEqual(request1, request2)
         self.assertEqual(request1.difference(request2), difference)
 
+    def test_arrays_strings_with_difference_and_empty_initial(self):
+        """Test if different in list.
+        """
+        value1 = {
+            "foo": []
+        }
+
+        value2 = {"foo": ["baz", "hello"]}
+        difference = {
+            "foo": ["baz", "hello"]
+        }
+        request1 = HcpRequest(value1)
+        request2 = HcpRequest(value2)
+        self.assertNotEqual(request1, request2)
+        self.assertEqual(request1.difference(request2), {})
+        self.assertEqual(request2.difference(request1), difference)
+
     def test_arrays_dicts_with_no_difference(self):
         """Test if no difference with a list of dictionaries.
         """
