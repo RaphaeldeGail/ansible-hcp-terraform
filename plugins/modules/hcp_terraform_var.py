@@ -16,18 +16,16 @@ ANSIBLE_METADATA = {'metadata_version': '1.1', 'status': ['preview'], 'supported
 
 DOCUMENTATION = '''
 ---
-module: hcp_terraform_varset
+module: hcp_terraform_var
 description:
-- Represents an HCP Terraform Variable set.
-- A variable set is a container for variables with bindings to workspaces or projects.
-short_description: Creates an HCP Terraform Variable set
+- Represents an HCP Terraform Variable.
+short_description: Creates an HCP Terraform Variable
 author: Raphaël de Gail (@RaphaeldeGail)
 requirements:
 - python >= 3.11
 - requests >= 2.32.2
 extends_documentation_fragment:
 - raphaeldegail.hcp_terraform.hcp_terraform
-- raphaeldegail.hcp_terraform.hcp_terraform.organization
 options:
   state:
     description:
@@ -37,56 +35,63 @@ options:
     - absent
     default: present
     type: str
-  name:
+  key:
     description:
-    - The name of the variable set.
+    - The name of the variable.
     required: true
+    type: str
+  value:
+    description:
+    - The value of the variable.
+    default: ''
     type: str
   description:
     description:
-    - Text displayed in the UI to contextualize the variable set and its purpose.
+    - The description of the variable.
     default: ''
     type: str
-  global_set:
+  category:
     description:
-    - When true, HCP Terraform automatically applies the variable set to all current and future workspaces in the organization.
+    - Whether this is a Terraform or environment variable.
+    choices:
+    - terraform
+    - env
+    required: true
+    type: str
+  hcl:
+    description:
+    - Whether to evaluate the value of the variable as a string of HCL code.
+    - Has no effect for environment variables.
     default: False
     type: bool
-  priority:
+  sensitive:
     description:
-    - When true, the variables in the set override any other variable values with a more specific scope, including values set on the command line.
+    - Whether the value is sensitive.
+    - If true, variable is not visible in the UI.
     default: False
     type: bool
-  workspaces:
+  varset_id:
     description:
-    - Array of references to workspaces that the variable set should be assigned to.
-    default: []
-    type: list
-    elements: str
-  projects:
+    - The ID of the variable set hosting the variable.
+    - It is mutually exclusive with C(workspace_id).
+    type: str
+  workspace_id:
     description:
-    - Array of references to projects that the variable set should be assigned to.
-    default: []
-    type: list
-    elements: str
+    - the ID of the workspace hosting the variable.
+    - It is mutually exclusive with C(varset_id).
+    type: str
 notes:
-  - variables inside variable set are treated in a separate module, hcp_terraform_var.
+- One of C(varset_id) of C(workspace_id) must be specified.
 '''
 
 EXAMPLES = '''
-- name: create a variable set
-  raphaeldegail.hcp_terraform.hcp_terraform_varset:
-    name: MySampleVariableSet
-    description: 'This is my sample variable set.'
+- name: create a variable
+  raphaeldegail.hcp_terraform.hcp_terraform_var:
+    key: demovariable
+    value: Demo Value
+    category: terraform
     state: present
-- name: update a variable set with projects bindings
-  raphaeldegail.hcp_terraform.hcp_terraform_varset:
-    name: MySampleVariableSet
-    description: 'This is my sample variable set.'
-    # This is a list of projects ID in the organization.
-    projects:
-    - 'prj-000'
-    - 'prj-123'
+    varset_id: varset-000
 '''
 
 RETURN = '''
@@ -98,30 +103,42 @@ attributes:
   contains:
     created-at:
       description:
-      - The time of creation of the object
+      - The time of creattion of the object
+      returned: success
+      type: str
+    key:
+      description:
+      - The name of the variable.
+      returned: success
+      type: str
+    value:
+      description:
+      - The value of the variable.
       returned: success
       type: str
     description:
       description:
-      - Text displayed in the UI to contextualize the variable set and its purpose.
+      - The description of the variable.
       returned: success
       type: str
-    name:
+    category:
       description:
-      - The name of the variable set.
+      - Whether this is a Terraform or environment variable.
       returned: success
       type: str
-    global_set:
+    hcl:
       description:
-      - When true, HCP Terraform automatically applies the variable set to all current and future workspaces in the organization.
+      - Whether to evaluate the value of the variable as a string of HCL code.
+      returned: success
       type: bool
-    priority:
+    sensitive:
       description:
-      - When true, the variables in the set override any other variable values with a more specific scope, including values set on the command line.
+      - Whether the value is sensitive.
+      returned: success
       type: bool
 id:
   description:
-  - The ID of the project.
+  - The ID of the variable.
   returned: success
   type: str
 links:
@@ -134,62 +151,9 @@ relationships:
   - Specify other objects that are linked to what you're working with.
   returned: success
   type: dict
-  contains:
-    workspaces:
-      description:
-      - Array of references to workspaces that the variable set is assigned to.
-      returned: success
-      type: list
-      elements: dict
-      contains:
-        id:
-          description:
-          - The ID of the workspace.
-          returned: success
-          type: str
-        type:
-          description:
-          - Must be 'workspaces'.
-          returned: success
-          type: str
-    projects:
-      description:
-      - Array of references to projects that the variable set is assigned to.
-      returned: success
-      type: list
-      elements: dict
-      contains:
-        id:
-          description:
-          - The ID of the project.
-          returned: success
-          type: str
-        type:
-          description:
-          - Must be 'projects'.
-          returned: success
-          type: str
-    vars:
-      description:
-      - Array of references to variables that comprise the variable set.
-      returned: success
-      type: list
-      elements: dict
-      contains:
-        id:
-          description:
-          - Must be 'vars'.
-          returned: success
-          type: str
-        type:
-          description:
-          - What type of API object you're interacting with.
-          returned: success
-          type: str
 type:
   description:
   - What type of API object you're interacting with.
-  - Must be 'varsets'.
   returned: success
   type: str
 '''
@@ -222,27 +186,34 @@ def main():
     module = HcpModule(
         argument_spec=dict(
             state=dict(default='present', choices=['present', 'absent'], type='str'),
-            name=dict(required=True, type='str'),
+            key=dict(required=True, type='str', no_log=False),
+            value=dict(default='', type='str'),
             description=dict(default='', type='str'),
-            global_set=dict(default=False, type='bool'),
-            priority=dict(default=False, type='bool'),
-            workspaces=dict(default=[], type='list', elements='str'),
-            projects=dict(default=[], type='list', elements='str'),
-            organization_name=dict(required=True, type='str'),
-        )
+            category=dict(required=True, choices=['terraform', 'env'], type='str'),
+            hcl=dict(default=False, type='bool'),
+            sensitive=dict(default=False, type='bool'),
+            varset_id=dict(type='str'),
+            workspace_id=dict(type='str')
+        ),
+        mutually_exclusive=[
+            ('varset_id', 'workspace_id'),
+        ],
+        required_one_of=[
+            ('varset_id', 'workspace_id'),
+        ]
     )
 
     state = module.params['state']
 
-    resource = fetch_by_name(module, collection(module))
+    resource = fetch_by_key(module, collection(module))
     changed = False
 
     if resource:
-        module.params['varset_id'] = resource['id']
+        module.params['var_id'] = resource['id']
         if state == 'present':
             if is_different(module, resource):
                 update(module, self_link(module))
-                resource = get(module, self_link(module))
+                resource = fetch_by_key(module, collection(module))
                 changed = True
         else:
             delete(module, self_link(module))
@@ -275,20 +246,6 @@ def create(module, link):
     return return_if_object(module, session.post(link, body)).get('data')
 
 
-def get(module, link):
-    """Fetch the existing resource by its ID.
-
-    Args:
-        module: ansible_collections.raphaeldegail.hcp_terraform.plugins.module_utils.hcp_terraform_utils.HcpModule, the ansible module.
-        link: str, the URL to call for the API operation.
-
-    Returns:
-        dict, the JSON-formatted response for the API call, if it exists.
-    """
-    session = HcpSession(module)
-    return return_if_object(module, session.get(link)).get('data')
-
-
 def update(module, link):
     """Updates the object.
 
@@ -301,7 +258,7 @@ def update(module, link):
     """
     session = HcpSession(module)
     body = {'data': resource_to_request(module)}
-    return return_if_object(module, session.put(link, body)).get('data')
+    return return_if_object(module, session.patch(link, body)).get('data')
 
 
 def delete(module, link):
@@ -318,8 +275,8 @@ def delete(module, link):
     return return_if_object(module, session.delete(link))
 
 
-def fetch_by_name(module, link):
-    """Fetch the existing resource by its name.
+def fetch_by_key(module, link):
+    """Fetch the existing resource by its key.
 
     Args:
         module: ansible_collections.raphaeldegail.hcp_terraform.plugins.module_utils.hcp_terraform_utils.HcpModule, the ansible module.
@@ -329,14 +286,10 @@ def fetch_by_name(module, link):
         dict, the JSON-formatted response for the API call, if it exists.
     """
     session = HcpSession(module)
-    params = {
-        'q': module.params.get('name')
-    }
-    return_list = session.list(link, return_if_object, params=params)
-    if len(return_list) > 1:
-        module.fail_json(msg=f'Expected 1 result, found: {len(return_list)}: {str(return_list)}')
-    if return_list:
-        return return_list.pop(0)
+    return_list = return_if_object(module, session.get(link))
+    for var in return_list['data']:
+        if var.get('attributes', {}).get('key') == module.params['key'] and var.get('attributes', {}).get('category') == module.params['category']:
+            return var
     return None
 
 
@@ -349,7 +302,9 @@ def collection(module):
     Returns:
         str, the generic URL for the resource module.
     """
-    return 'https://app.terraform.io/api/v2/organizations/{organization_name}/varsets'.format(**module.params)
+    if module.params.get('workspace_id'):
+        return 'https://app.terraform.io/api/v2/workspaces/{workspace_id}/vars'.format(**module.params)
+    return 'https://app.terraform.io/api/v2/varsets/{varset_id}/relationships/vars'.format(**module.params)
 
 
 def self_link(module):
@@ -361,7 +316,9 @@ def self_link(module):
     Returns:
         str, the specific URL for the resource module.
     """
-    return 'https://app.terraform.io/api/v2/varsets/{varset_id}'.format(**module.params)
+    if module.params.get('workspace_id'):
+        return 'https://app.terraform.io/api/v2/workspaces/{workspace_id}/vars/{var_id}'.format(**module.params)
+    return 'https://app.terraform.io/api/v2/varsets/{varset_id}/relationships/vars/{var_id}'.format(**module.params)
 
 
 def return_if_object(module, response, allow_not_found=False):
@@ -425,24 +382,14 @@ def resource_to_request(module):
     """
     request = {
         'attributes': {
-            'name': module.params.get('name'),
+            'key': module.params.get('key'),
+            'value': module.params.get('value'),
             'description': module.params.get('description'),
-            'global': module.params.get('global_set'),
-            'priority': module.params.get('priority')
+            'category': module.params.get('category'),
+            'hcl': module.params.get('hcl'),
+            'sensitive': module.params.get('sensitive')
         },
-        'relationships': {
-            'workspaces': {
-                'data': [
-                    {'id': workspace, 'type': 'workspaces'} for workspace in module.params.get('workspaces')
-                ]
-            },
-            'projects': {
-                'data': [
-                    {'id': project, 'type': 'projects'} for project in module.params.get('projects')
-                ]
-            }
-        },
-        'type': 'varsets'
+        'type': 'vars'
     }
 
     return request
@@ -461,18 +408,12 @@ def response_to_hash(response):
     """
     return {
         'attributes': {
-            'name': response.get('attributes').get('name'),
-            'description': response.get('attributes').get('description') or '',
-            'global': response.get('attributes').get('global'),
-            'priority': response.get('attributes').get('priority')
-        },
-        'relationships': {
-            'workspaces': {
-                'data': response.get('relationships').get('workspaces').get('data')
-            },
-            'projects': {
-                'data': response.get('relationships').get('projects').get('data')
-            }
+            'key': response.get('attributes').get('key'),
+            'value': response.get('attributes').get('value'),
+            'description': response.get('attributes').get('description'),
+            'category': response.get('attributes').get('category'),
+            'hcl': response.get('attributes').get('hcl'),
+            'sensitive': response.get('attributes').get('sensitive')
         }
     }
 

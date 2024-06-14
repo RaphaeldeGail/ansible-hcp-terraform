@@ -18,9 +18,9 @@ DOCUMENTATION = '''
 ---
 module: hcp_terraform_varset_info
 description:
-- Represents an HCP Terraform Variable set.
+- Fetches information about an HCP Terraform Variable set.
 - A variable set is a container for variables with bindings to workspaces or projects.
-short_description: Creates an HCP Terraform Project
+short_description: Query an HCP Terraform Variable set
 author: Raphaël de Gail (@RaphaeldeGail)
 requirements:
 - python >= 3.11
