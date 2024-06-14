@@ -1,0 +1,21 @@
+---
+- name: Generate a variable set for the tests
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: 'temporaryvarset'
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: varset
+- name: Generated tests
+  ansible.builtin.include_tasks: var.yaml
+  vars:
+    key: 'demovariable'
+    value: 'Some Value'
+    description: 'This is a description.'
+    varset_id: "{{ varset.id }}"
+- name: Delete the variable set after the tests
+  raphaeldegail.hcp_terraform.hcp_terraform_varset:
+    name: 'temporaryvarset'
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"

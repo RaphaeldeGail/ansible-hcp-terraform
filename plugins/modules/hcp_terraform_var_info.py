@@ -16,30 +16,49 @@ ANSIBLE_METADATA = {'metadata_version': '1.1', 'status': ['preview'], 'supported
 
 DOCUMENTATION = '''
 ---
-module: hcp_terraform_project_info
+module: hcp_terraform_var_info
 description:
-- Fetches information about an HCP Terraform Project.
-- A project is a container for terraform workspaces with specific variables.
-short_description: Query an HCP Terraform Project
+- Fetches information about an HCP Terraform Variable.
+short_description: Query an HCP Terraform Variable
 author: Raphaël de Gail (@RaphaeldeGail)
 requirements:
 - python >= 3.11
 - requests >= 2.32.2
 extends_documentation_fragment:
 - raphaeldegail.hcp_terraform.hcp_terraform
-- raphaeldegail.hcp_terraform.hcp_terraform.organization
 options:
-  name:
+  key:
     description:
-    - The user-assigned display name of the Project.
+    - The name of the variable.
     required: true
     type: str
+  category:
+    description:
+    - Whether this is a Terraform or environment variable.
+    choices:
+    - terraform
+    - env
+    required: true
+    type: str
+  varset_id:
+    description:
+    - The ID of the variable set hosting the variable.
+    - It is mutually exclusive with C(workspace_id).
+    type: str
+  workspace_id:
+    description:
+    - the ID of the workspace hosting the variable.
+    - It is mutually exclusive with C(varset_id).
+    type: str
+notes:
+- One of C(varset_id) of C(workspace_id) must be specified.
 '''
 
 EXAMPLES = '''
-- name: fetch info about a project
-  raphaeldegail.hcp_terraform.hcp_terraform_project_info:
-    name: My Sample Project
+- name: fetch info about a variable
+  raphaeldegail.hcp_terraform.hcp_terraform_var_info:
+    key: demovariable
+    category: terraform
 '''
 
 RETURN = '''
@@ -54,19 +73,39 @@ attributes:
       - The time of creattion of the object
       returned: success
       type: str
+    key:
+      description:
+      - The name of the variable.
+      returned: success
+      type: str
+    value:
+      description:
+      - The value of the variable.
+      returned: success
+      type: str
     description:
       description:
-      - The description of the project.
+      - The description of the variable.
       returned: success
       type: str
-    name:
+    category:
       description:
-      - The name of the project.
+      - Whether this is a Terraform or environment variable.
       returned: success
       type: str
+    hcl:
+      description:
+      - Whether to evaluate the value of the variable as a string of HCL code.
+      returned: success
+      type: bool
+    sensitive:
+      description:
+      - Whether the value is sensitive.
+      returned: success
+      type: bool
 id:
   description:
-  - The ID of the project.
+  - The ID of the variable.
   returned: success
   type: str
 links:
@@ -107,14 +146,22 @@ import json
 def main():
     """Main module function.
 
-    Fetch the project on HCP Terraform platform.
+    Fetch the varset on HCP Terraform platform.
     """
 
     module = HcpModule(
         argument_spec=dict(
-            name=dict(required=True, type='str'),
-            organization_name=dict(required=True, type='str'),
+            key=dict(required=True, type='str', no_log=False),
+            category=dict(required=True, choices=['terraform', 'env'], type='str'),
+            varset_id=dict(type='str'),
+            workspace_id=dict(type='str')
         ),
+        mutually_exclusive=[
+            ('varset_id', 'workspace_id'),
+        ],
+        required_one_of=[
+            ('varset_id', 'workspace_id'),
+        ],
         supports_check_mode=True
     )
 
@@ -123,7 +170,7 @@ def main():
         result['changed'] = False
         module.exit_json(**result)
 
-    resource = fetch_by_name(module, collection(module))
+    resource = fetch_by_key(module, collection(module))
     changed = False
 
     if not resource:
@@ -133,8 +180,8 @@ def main():
     module.exit_json(**resource)
 
 
-def fetch_by_name(module, link):
-    """Fetch the existing resource by its name.
+def fetch_by_key(module, link):
+    """Fetch the existing resource by its key.
 
     Args:
         module: ansible_collections.raphaeldegail.hcp_terraform.plugins.module_utils.hcp_terraform_utils.HcpModule, the ansible module.
@@ -144,14 +191,10 @@ def fetch_by_name(module, link):
         dict, the JSON-formatted response for the API call, if it exists.
     """
     session = HcpSession(module)
-    params = {
-        'filter[names]': module.params.get('name')
-    }
-    return_list = session.list(link, return_if_object, params=params)
-    if len(return_list) > 1:
-        module.fail_json(msg=f'Expected 1 result, found: {len(return_list)}: {str(return_list)}')
-    if return_list:
-        return return_list.pop(0)
+    return_list = return_if_object(module, session.get(link))
+    for var in return_list['data']:
+        if var.get('attributes', {}).get('key') == module.params['key'] and var.get('attributes', {}).get('category') == module.params['category']:
+            return var
     return None
 
 
@@ -164,7 +207,9 @@ def collection(module):
     Returns:
         str, the generic URL for the resource module.
     """
-    return 'https://app.terraform.io/api/v2/organizations/{organization_name}/projects'.format(**module.params)
+    if module.params.get('workspace_id'):
+        return 'https://app.terraform.io/api/v2/workspaces/{workspace_id}/vars'.format(**module.params)
+    return 'https://app.terraform.io/api/v2/varsets/{varset_id}/relationships/vars'.format(**module.params)
 
 
 def return_if_object(module, response, allow_not_found=False):
@@ -180,6 +225,7 @@ def return_if_object(module, response, allow_not_found=False):
     """
     # If not found, return nothing.
     if response.status_code == 404:
+        module.fail_json(msg=collection(module))
         return None
 
     # If no content, return nothing.
