@@ -1,0 +1,6 @@
+---
+- name: Generated tests
+  ansible.builtin.include_tasks: workspace.yaml
+  vars:
+    name: 'Demo-Workspace'
+    description: 'Legendary demo.'

@@ -1,0 +1,136 @@
+---
+# Pre-test setup
+- name: Delete the test workspace if it exists
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+# ------------------------------------------------------------------------------
+- name: Create a workspace
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: "{{ name }}"
+    auto_apply: true
+    auto_apply_run_trigger: true
+    description: "{{ description }}"
+    source_name: "modest python client"
+    vcs_repo:
+      identifier: 'RaphaeldeGail/ansible-hcp-terraform'
+      oauth_token_id: "{{ oauth_token_id }}"
+    terraform_version: '~>1.7.0'
+    setting_overwrites:
+      execution-mode: False
+      agent-pool: False
+    trigger_patterns:
+    - "/terraform/*.tf"
+    working_directory: "/terraform"
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Query the workspace
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace_info:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify the result contains an ID and a name
+  ansible.builtin.assert:
+    that:
+      - "'id' in result"
+      - result.get('attributes', {}).get('name') == name
+      - result.attributes['working-directory'] == '/terraform'
+# ------------------------------------------------------------------------------
+- name: Create a workspace that already exists
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: "{{ name }}"
+    auto_apply: true
+    auto_apply_run_trigger: true
+    description: "{{ description }}"
+    source_name: "modest python client"
+    vcs_repo:
+      identifier: 'RaphaeldeGail/ansible-hcp-terraform'
+      oauth_token_id: "{{ oauth_token_id }}"
+    terraform_version: '~>1.7.0'
+    setting_overwrites:
+      execution-mode: False
+      agent-pool: False
+    trigger_patterns:
+    - "/terraform/*.tf"
+    working_directory: "/terraform"
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.attributes.name == name
+# ------------------------------------------------------------------------------
+- name: Update a workspace that already exists with only a name and description
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: "{{ name }}"
+    description: "{{ description }}"
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.attributes.name == name
+      - result.attributes.description == description
+      - not result.attributes['working-directory']
+- name: Query the workspace
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace_info:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify that the result contains an ID, a name and a description
+  ansible.builtin.assert:
+    that:
+      - "'id' in result"
+      - result.get('attributes', {}).get('name') == name
+      - result.get('attributes', {}).get('description') == description
+      - not result.get('attributes', {}).get('working-directory')
+#----------------------------------------------------------
+- name: Delete a workspace
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Query the workspace
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace_info:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify that no workspace ID was found
+  ansible.builtin.assert:
+    that:
+      - "'id' not in result"
+# ------------------------------------------------------------------------------
+- name: Delete a workspace that does not exist
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: "{{ name }}"
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false

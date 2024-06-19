@@ -92,53 +92,68 @@ relationships:
       description:
       - Array of references to workspaces that the variable set is assigned to.
       returned: success
-      type: list
-      elements: dict
+      type: dict
       contains:
-        id:
+        data:
           description:
-          - The ID of the workspace.
-          returned: success
-          type: str
-        type:
-          description:
-          - Must be 'workspaces'.
-          returned: success
-          type: str
+          - data about the workspaces.
+          type: list
+          elements: dict
+          contains:
+            id:
+              description:
+              - The ID of the workspace.
+              returned: success
+              type: str
+            type:
+              description:
+              - Must be 'workspaces'.
+              returned: success
+              type: str
     projects:
       description:
       - Array of references to projects that the variable set is assigned to.
       returned: success
-      type: list
-      elements: dict
+      type: dict
       contains:
-        id:
+        data:
           description:
-          - The ID of the project.
-          returned: success
-          type: str
-        type:
-          description:
-          - Must be 'projects'.
-          returned: success
-          type: str
+          - data about the projects.
+          type: list
+          elements: dict
+          contains:
+            id:
+              description:
+              - The ID of the project.
+              returned: success
+              type: str
+            type:
+              description:
+              - Must be 'projects'.
+              returned: success
+              type: str
     vars:
       description:
       - Array of references to variables that comprise the variable set.
       returned: success
-      type: list
-      elements: dict
+      type: dict
       contains:
-        id:
+        data:
           description:
-          - Must be 'vars'.
-          returned: success
-          type: str
-        type:
-          description:
-          - What type of API object you're interacting with.
-          returned: success
-          type: str
+          - data about the variables.
+          type: list
+          elements: dict
+          contains:
+            id:
+              description:
+              - Must be 'vars'.
+              returned: success
+              type: str
+            type:
+              description:
+              - What type of API object you're interacting with.
+              returned: success
+              type: str
 type:
   description:
   - What type of API object you're interacting with.
