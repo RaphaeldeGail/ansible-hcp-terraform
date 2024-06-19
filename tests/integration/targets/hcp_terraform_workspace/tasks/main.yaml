@@ -4,4 +4,3 @@
   vars:
     name: 'Demo-Workspace'
     description: 'Legendary demo.'
-    oauth_token_id: "{{ oauth_token_id }}"
