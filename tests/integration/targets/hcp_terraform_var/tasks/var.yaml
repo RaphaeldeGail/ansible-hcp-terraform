@@ -1,0 +1,125 @@
+---
+# Pre-test setup
+- name: Delete the test variable if it exists
+  raphaeldegail.hcp_terraform.hcp_terraform_var:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+# ------------------------------------------------------------------------------
+- name: Create a variable
+  raphaeldegail.hcp_terraform.hcp_terraform_var:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Query the variable
+  raphaeldegail.hcp_terraform.hcp_terraform_var_info:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify the result contains an ID and a name
+  ansible.builtin.assert:
+    that:
+      - "'id' in result"
+      - result.get('attributes', {}).get('key') == key
+# ------------------------------------------------------------------------------
+- name: Create a variable that already exists
+  raphaeldegail.hcp_terraform.hcp_terraform_var:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.attributes.key == key
+# ------------------------------------------------------------------------------
+- name: Update a variable that already exists with a description and a value
+  raphaeldegail.hcp_terraform.hcp_terraform_var:
+    key: "{{ key }}"
+    value: "{{ value }}"
+    category: 'terraform'
+    description: "{{ description }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.attributes.key == key
+      - result.attributes.value == value
+      - result.attributes.description == description
+- name: Query the variable
+  raphaeldegail.hcp_terraform.hcp_terraform_var_info:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify that the result contains an ID, a key, a description and a value
+  ansible.builtin.assert:
+    that:
+      - "'id' in result"
+      - result.get('attributes', {}).get('key') == key
+      - result.get('attributes', {}).get('description') == description
+      - result.get('attributes', {}).get('value') == value
+#----------------------------------------------------------
+- name: Delete a variable
+  raphaeldegail.hcp_terraform.hcp_terraform_var:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Query the variable
+  raphaeldegail.hcp_terraform.hcp_terraform_var_info:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Verify that no variable ID was found
+  ansible.builtin.assert:
+    that:
+      - "'id' not in result"
+# ------------------------------------------------------------------------------
+- name: Delete a variable that does not exist
+  raphaeldegail.hcp_terraform.hcp_terraform_var:
+    key: "{{ key }}"
+    category: 'terraform'
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false

@@ -1,0 +1,6 @@
+---
+- name: Generated tests
+  ansible.builtin.include_tasks: varset.yaml
+  vars:
+    name: 'YoLo'
+    description: 'Yala'

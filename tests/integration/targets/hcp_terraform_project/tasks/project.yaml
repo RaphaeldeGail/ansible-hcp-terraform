@@ -1,0 +1,105 @@
+---
+# Pre-test setup
+- name: Delete the test project if it exists
+  raphaeldegail.hcp_terraform.hcp_terraform_project:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+# ------------------------------------------------------------------------------
+- name: Create a project
+  raphaeldegail.hcp_terraform.hcp_terraform_project:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Verify the project was created
+  raphaeldegail.hcp_terraform.hcp_terraform_project_info:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: results
+- name: Verify that command succeeded
+  ansible.builtin.assert:
+    that:
+      - "'id' in results"
+      - results.get('attributes', {}).get('name') == 'YoLo'
+# ------------------------------------------------------------------------------
+- name: Create a project that already exists
+  raphaeldegail.hcp_terraform.hcp_terraform_project:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.attributes.name == 'YoLo'
+# ------------------------------------------------------------------------------
+- name: Update a project that already exists
+  raphaeldegail.hcp_terraform.hcp_terraform_project:
+    name: YoLo
+    description: 'Yala'
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.attributes.name == 'YoLo'
+      - result.attributes.description == 'Yala'
+- name: Verify the project was updated
+  raphaeldegail.hcp_terraform.hcp_terraform_project_info:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: results
+- name: Verify that command succeeded
+  ansible.builtin.assert:
+    that:
+      - "'id' in results"
+      - results.get('attributes', {}).get('name') == 'YoLo'
+      - results.get('attributes', {}).get('description') == 'Yala'
+#----------------------------------------------------------
+- name: Delete a project
+  raphaeldegail.hcp_terraform.hcp_terraform_project:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+- name: Verify the project was deleted
+  raphaeldegail.hcp_terraform.hcp_terraform_project_info:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    bearer_token: "{{ bearer_token }}"
+  register: results
+- name: Verify that command succeeded
+  ansible.builtin.assert:
+    that:
+      - "'id' not in results"
+# ------------------------------------------------------------------------------
+- name: Delete a project that does not exist
+  raphaeldegail.hcp_terraform.hcp_terraform_project:
+    name: YoLo
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
+  register: result
+- name: Assert changed is false
+  ansible.builtin.assert:
+    that:
+      - result.changed == false

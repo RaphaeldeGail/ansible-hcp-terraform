@@ -7,9 +7,12 @@ This collection works with Ansible 2.16+
 ## Installation
 
 ```bash
-ansible-galaxy collection install raphaeldegail.hcp-terraform
+ansible-galaxy collection install raphaeldegail.hcp_terraform
 ```
 
 ## Resources Supported
 
-* Terraform project (hcp_terraform_project)
+* Terraform project (hcp_terraform_project, hcp_terraform_project_info)
+* Terraform variable set (hcp_terraform_varset, hcp_terraform_varset_info)
+* Terraform variable (hcp_terraform_var, hcp_terraform_var_info)
+* Terraform workspace (hcp_terraform_workspace, hcp_terraform_workspace_info)
