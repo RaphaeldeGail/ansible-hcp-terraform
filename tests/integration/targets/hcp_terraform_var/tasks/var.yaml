@@ -4,7 +4,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     state: absent
     bearer_token: "{{ bearer_token }}"
 # ------------------------------------------------------------------------------
@@ -12,7 +13,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     state: present
     bearer_token: "{{ bearer_token }}"
   register: result
@@ -24,7 +26,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var_info:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     bearer_token: "{{ bearer_token }}"
   register: result
 - name: Verify the result contains an ID and a name
@@ -37,7 +40,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     state: present
     bearer_token: "{{ bearer_token }}"
   register: result
@@ -53,7 +57,8 @@
     value: "{{ value }}"
     category: 'terraform'
     description: "{{ description }}"
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     bearer_token: "{{ bearer_token }}"
   register: result
 - name: Assert changed is true
@@ -67,7 +72,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var_info:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     bearer_token: "{{ bearer_token }}"
   register: result
 - name: Verify that the result contains an ID, a key, a description and a value
@@ -82,7 +88,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     state: absent
     bearer_token: "{{ bearer_token }}"
   register: result
@@ -94,7 +101,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var_info:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     bearer_token: "{{ bearer_token }}"
   register: result
 - name: Verify that no variable ID was found
@@ -106,7 +114,8 @@
   raphaeldegail.hcp_terraform.hcp_terraform_var:
     key: "{{ key }}"
     category: 'terraform'
-    varset_id: "{{ varset_id }}"
+    varset_id: "{{ varset_id | default(omit) }}"
+    workspace_id: "{{ workspace_id | default(omit) }}"
     state: absent
     bearer_token: "{{ bearer_token }}"
   register: result

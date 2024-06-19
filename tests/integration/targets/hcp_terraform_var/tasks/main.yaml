@@ -19,3 +19,24 @@
     organization_name: "{{ organization_name }}"
     state: absent
     bearer_token: "{{ bearer_token }}"
+# ------------------------------------------------------------------------------
+- name: Generate a workspace for the tests
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: 'temporaryworkspace'
+    organization_name: "{{ organization_name }}"
+    state: present
+    bearer_token: "{{ bearer_token }}"
+  register: workspace
+- name: Generated tests
+  ansible.builtin.include_tasks: var.yaml
+  vars:
+    key: 'demovariable'
+    value: 'Some Value'
+    description: 'This is a description.'
+    workspace_id: "{{ workspace.id }}"
+- name: Delete the workspace after the tests
+  raphaeldegail.hcp_terraform.hcp_terraform_workspace:
+    name: 'temporaryworkspace'
+    organization_name: "{{ organization_name }}"
+    state: absent
+    bearer_token: "{{ bearer_token }}"
