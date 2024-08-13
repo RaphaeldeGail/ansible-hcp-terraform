@@ -46,7 +46,13 @@ requires_ansible: '>=2.16.0'
 #     redirect: ansible_collections.ns.col.plugins.module_utils.new_location
 
 # Groups of actions/modules that take a common set of options
-# action_groups:
-#   group_name:
-#     - module1
-#     - module2
+action_groups:
+  hcp:
+    - hcp_terraform_project_info
+    - hcp_terraform_project
+    - hcp_terraform_var_info
+    - hcp_terraform_var
+    - hcp_terraform_varset_info
+    - hcp_terraform_varset
+    - hcp_terraform_workspace_info
+    - hcp_terraform_workspace

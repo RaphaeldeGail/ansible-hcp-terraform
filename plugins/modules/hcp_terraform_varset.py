@@ -476,17 +476,17 @@ def response_to_hash(response):
     """
     return {
         'attributes': {
-            'name': response.get('attributes').get('name'),
-            'description': response.get('attributes').get('description') or '',
-            'global': response.get('attributes').get('global'),
-            'priority': response.get('attributes').get('priority')
+            'name': response.get('attributes', {}).get('name'),
+            'description': response.get('attributes', {}).get('description') or '',
+            'global': response.get('attributes', {}).get('global'),
+            'priority': response.get('attributes', {}).get('priority')
         },
         'relationships': {
             'workspaces': {
-                'data': response.get('relationships').get('workspaces').get('data')
+                'data': response.get('relationships', {}).get('workspaces', {}).get('data')
             },
             'projects': {
-                'data': response.get('relationships').get('projects').get('data')
+                'data': response.get('relationships', {}).get('projects', {}).get('data')
             }
         }
     }
