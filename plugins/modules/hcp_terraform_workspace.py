@@ -753,9 +753,7 @@ def resource_to_request(module):
     request.update({
         'relationships': {
             'project': {
-                'data': [
-                    {'id': module.params.get('project'), 'type': 'projects'}
-                ]
+                'data': {'id': module.params.get('project'), 'type': 'projects'}
             }
         }
     } if module.params.get('project') else {})
@@ -785,7 +783,7 @@ def response_to_hash(response):
     Returns:
         dict, the processed response.
     """
-    attributes = response.get('attributes')
+    attributes = response.get('attributes', {})
     return {
         'attributes': {
             'name': attributes.get('name'),
